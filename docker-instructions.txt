@@ -1,0 +1,8 @@
+Make sure you have docker installed
+https://hub.docker.com/editions/community/docker-ce-desktop-mac/
+
+Initial setup - build docker image (from root of project dir)
+docker build -t midas .
+
+Starting backend dev env
+docker run -d -p 3000:3000 midas
