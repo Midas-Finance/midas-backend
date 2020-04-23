@@ -10,7 +10,13 @@ export class PricingController {
   @Get(':id')
   async getSinglePrice(@Param() params) {
     const prices = await this.pricingService.getStockPrices(params.id, Series.Single);
-    return `The latest price of ${params.id} is ${prices[0]}.`;
+    return prices[0];
+  }
+
+  @Get('/ohlc/:id')
+  async getOHLCPrices(@Param() params) {
+    const prices = await this.pricingService.getStockPrices(params.id, Series.OHLC);
+    return prices;
   }
 
   // gets prices since SOD

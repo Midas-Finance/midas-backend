@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { PriceResponse, PriceData, SeriesData } from 'src/models/PriceResponse';
 
 export enum Series {
+  OHLC = 'ohlc',
   Single = 'Single',
   IntraDay = 'IntraDay',
   Month = 'Month',
@@ -35,23 +36,38 @@ export class PricingService {
   }
   
   async getStockPrices(symbol: string, series: Series) {
+    let requestURL;
+    const url = `${this.baseUrl}/${this.version}`;
+
     switch (series) {
       case Series.Single: 
-        return this.extractPrices(await this.makeWebRequest(`${this.baseUrl}/${this.version}/${this.singlePriceUrl}${this.iexApiToken}&symbols=${symbol}`));
-      
+        requestURL = `${url}/${this.singlePriceUrl}${this.iexApiToken}&symbols=${symbol}`;
+        break;
+
       case Series.IntraDay:
-        console.log(`${this.baseUrl}/${this.version}/stock/${symbol}/intraday-prices/?chartIEXOnly=true&token=${this.iexApiToken}`);
-        return this.extractPrices(await this.makeWebRequest(`${this.baseUrl}/${this.version}/stock/${symbol}/intraday-prices/?chartIEXOnly=true&token=${this.iexApiToken}`));
+        requestURL = `${url}/stock/${symbol}/intraday-prices/?chartIEXOnly=true&token=${this.iexApiToken}`;
+        break;
 
       case Series.Month:
-        return this.extractPrices(await this.makeWebRequest(`${this.baseUrl}/${this.version}/stock/${symbol}/chart/1m?token=${this.iexApiToken}`));
+        requestURL = `${url}/stock/${symbol}/chart/1m?token=${this.iexApiToken}`;
+        break;
 
+      case Series.OHLC: 
+        requestURL = `${url}/stock/${symbol}/ohlc?token=${this.iexApiToken}`;
+        break;         
     }
+    return this.extractPrices(await this.makeWebRequest(requestURL));
   }
 
   private extractPrices(response: PriceResponse) {
     const prices = [];
-    response.data.forEach((datum: PriceData & SeriesData) => {
+    let data = response.data;
+
+    // If it isn't an array, it's not series data so we don't need to parse it. Just return the whole object
+    if (!Array.isArray(data)) {
+      return data;
+    }
+    data.forEach((datum: PriceData & SeriesData) => {
       if ((datum as PriceData).lastSalePrice) {
         prices.push((datum as PriceData).lastSalePrice);
       } else {
